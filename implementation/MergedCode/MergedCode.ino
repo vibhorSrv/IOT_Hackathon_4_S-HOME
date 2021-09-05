@@ -13,8 +13,11 @@ const char *WiFi_SSID = "NETGEAR33";
 const char *WiFi_Password = "sweetelephant067";
 
 /* ThingSpeak Properties */
-unsigned long thingspeak_ChannelID = 1497698;
-const char * thingspeak_WriteAPIKey = "4MGWZM2JL5YNKEFY";
+unsigned long thingspeak_ChannelID = 000000;
+const char * thingspeak_WriteAPIKey = "keykeykey";
+
+unsigned long thingspeak_ReadChannelID = 000000;
+const char * thingspeak_ReadAPIKey = "keykeykey";
 /******************************************************************/
 
 /* Sensors */
@@ -35,8 +38,15 @@ const char * thingspeak_WriteAPIKey = "4MGWZM2JL5YNKEFY";
 #define PIN_LED_LDR 5
 
 /******************************************************************/
+/** Values Downloaded from cloud */
 
-/* Values */
+int status_light1;
+int status_light2;
+int status_fan1;
+int status_fan2;
+
+
+/* Values to be Uploaded */
 
 int value_LDR = 0;
 
@@ -60,6 +70,9 @@ void Init_SerialMonitor();
 void ConnectToWiFi();
 void Loop_UploadAllData();
 void ThingSpeakBegin();
+
+bool Loop_ThingSpeakReadAllFields();
+void Loop_UpdateApplianceStates();
 
 void Init_PinModesAndSensors();
 
@@ -139,6 +152,47 @@ void Init_PinModesAndSensors()
 /******************************************************************/
 /* Looping Functions */
 
+
+bool Loop_ThingSpeakReadAllFields()
+{
+  LOG(__func__)
+
+  if (ThingSpeak.readMultipleFields(thingspeak_ReadChannelID, thingspeak_ReadAPIKey) == 200)
+  {
+    status_light1 = ThingSpeak.getFieldAsInt(1);
+    status_light2 = ThingSpeak.getFieldAsInt(2);
+    status_fan1 = ThingSpeak.getFieldAsInt(3);
+    status_fan2 = ThingSpeak.getFieldAsInt(4);
+    return true;
+  }
+  return false;
+
+}
+
+void Loop_UpdateApplianceStates()
+{
+  LOG(__func__)
+
+  //digitalWrite(PIN_LIGHT1, (uint8_t)status_light1);
+  Serial.println("Setting LIGHT 1 :->" + booleanToString(status_light1));
+
+  //digitalWrite(PIN_LIGHT2, (uint8_t)status_light2);
+  Serial.println("Setting LIGHT 1 :->" + booleanToString(status_light2));
+
+  //digitalWrite(PIN_FAN1, (uint8_t)status_fan1);
+  Serial.println("Setting FAN 1 :->" + booleanToString(status_fan1));
+
+  //digitalWrite(PIN_FAN2, (uint8_t)status_fan2);
+  Serial.println("Setting FAN 2 :->" + booleanToString(status_fan2));
+
+  Serial.println();
+
+}
+
+String booleanToString(bool b)
+{
+  return (b ? String("ON") : String("OFF"));
+}
 /*
    Gather analog data from LDR Sensor
 */
@@ -310,12 +364,12 @@ void Loop_TakeDecision_PIR()
 void Loop_UploadAllData()
 {
   LOG(__func__)
-  ThingSpeak.setField(1, value_LDR);
-  ThingSpeak.setField(2, value_temperature);
-  ThingSpeak.setField(3, value_humidity);
-  ThingSpeak.setField(4, value_distanceCM);
-  ThingSpeak.setField(5, 0);
-  ThingSpeak.setField(6, value_pir);
+  ThingSpeak.setField(1, value_LDR); // light intensitty
+  ThingSpeak.setField(2, value_temperature); // room temperature
+  ThingSpeak.setField(3, value_humidity); // humidity
+  ThingSpeak.setField(4, value_distanceCM); // room temperature
+  ThingSpeak.setField(5, 0); //Gas Sensor value
+  ThingSpeak.setField(6, value_pir); //Motion sensor value
   ThingSpeak.writeFields(thingspeak_ChannelID, thingspeak_WriteAPIKey);
   Serial.println();
 }
@@ -331,6 +385,11 @@ void setup() {
 }
 
 void loop() {
+  if (Loop_ThingSpeakReadAllFields())
+  {
+    Loop_UpdateApplianceStates();
+    delay(5000);
+  }
 
   if (Loop_GatherData_DHT11())
   {
