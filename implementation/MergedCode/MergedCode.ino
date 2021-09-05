@@ -1,3 +1,10 @@
+/**
+   IOT Smart Home Automation Project
+
+   Authors:- Vibhor, Vinayak, Abhishek, Zeba, Anjali
+
+*/
+
 /* Essentials */
 #include<DHT.h>
 #include<WiFi.h>
@@ -7,7 +14,6 @@
 #define LOG(msg) { if(DEBUG) Serial.println(String("**")+msg);}
 
 /* WIFI Properties */
-
 WiFiClient client;
 const char *WiFi_SSID = "NETGEAR33";
 const char *WiFi_Password = "sweetelephant067";
@@ -18,13 +24,16 @@ const char * thingspeak_WriteAPIKey = "keykeykey";
 
 unsigned long thingspeak_ReadChannelID = 000000;
 const char * thingspeak_ReadAPIKey = "keykeykey";
+
 /******************************************************************/
 
-/* Sensors */
+/* Sensors Pins */
 
 #define PIN_LDR 17
 
 #define PIN_DHT 15
+
+#define PIN_GAS 14
 
 #define PIN_ULTRASONIC_TRIG 4
 #define PIN_ULTRASONIC_ECHO 18
@@ -50,8 +59,10 @@ int status_fan2;
 
 int value_LDR = 0;
 
-float value_humidity = 0.0f;
-float value_temperature = 0.0f;
+float value_humidity = 0;
+float value_temperature = 0;
+
+float value_gas;
 
 int Full_Tank = 10; //setting full tank level distance 10cm
 long T;
@@ -68,7 +79,6 @@ int value_pir = LOW;
 */
 void Init_SerialMonitor();
 void ConnectToWiFi();
-void Loop_UploadAllData();
 void ThingSpeakBegin();
 
 bool Loop_ThingSpeakReadAllFields();
@@ -85,10 +95,15 @@ void Loop_TakeDecision_DHT11();
 void Loop_Ultra_Sonic_Distance();
 void Loop_TakeDecision_UltraSonic();
 
+void Loop_GatherData_Gas();
+void Loop_TakeDecision_Gas();
+
 void Loop_GatherData_PIR();
 void Take_Decision_PIR();
 
 void Loop_UploadAllData();
+
+String booleanToString(bool b);
 
 /* Initialization functions */
 DHT dht(PIN_DHT, DHT11);
@@ -146,6 +161,8 @@ void Init_PinModesAndSensors()
   //Ultra sonic
   pinMode(PIN_ULTRASONIC_TRIG, OUTPUT);
   pinMode(PIN_ULTRASONIC_ECHO, INPUT);
+  //PIR
+  pinMode(PIN_PIR, INPUT);
 
 }
 
@@ -153,6 +170,11 @@ void Init_PinModesAndSensors()
 /* Looping Functions */
 
 
+/**
+    Read All the fields from the ThingSpeak Channel (It is for user remote control)
+
+    returns true if successfully read all the fields else false
+*/
 bool Loop_ThingSpeakReadAllFields()
 {
   LOG(__func__)
@@ -169,11 +191,14 @@ bool Loop_ThingSpeakReadAllFields()
 
 }
 
+/**
+   Updates all the appliance's on off state based on the data received from the ThingSpeak cloud
+*/
 void Loop_UpdateApplianceStates()
 {
   LOG(__func__)
 
-  //digitalWrite(PIN_LIGHT1, (uint8_t)status_light1);
+  //digitalWrite(PIN_LIGHT1, (uint8_t)status_light1); //This will be a relay connected to Appliance's switch
   Serial.println("Setting LIGHT 1 :->" + booleanToString(status_light1));
 
   //digitalWrite(PIN_LIGHT2, (uint8_t)status_light2);
@@ -185,7 +210,6 @@ void Loop_UpdateApplianceStates()
   //digitalWrite(PIN_FAN2, (uint8_t)status_fan2);
   Serial.println("Setting FAN 2 :->" + booleanToString(status_fan2));
 
-  Serial.println();
 
 }
 
@@ -214,12 +238,15 @@ void Loop_TakeDecision_LIGHTING(int ldr_value, bool isMotionDetected)
   LOG(__func__)
   if (ldr_value > 500 && isMotionDetected) // and motion detected then turn on light
   {
+    //Call the Actuator
     digitalWrite(PIN_LED_LDR, HIGH);
     Serial.print(ldr_value);
     Serial.println(";Lights ON");
+
   }
   else
   {
+    //Call the Actuator
     digitalWrite(PIN_LED_LDR, LOW);
     Serial.print(ldr_value);
     Serial.println(";Lights OFF");
@@ -267,24 +294,29 @@ void Loop_TakeDecision_DHT11()
   if (value_temperature > 30)
   {
     Serial.println("Hot : Fan Speed -> Fast");
+    //Call the Actuator
   }
   else if (value_temperature < 30 && value_temperature > 22)
   {
     Serial.println("Comfortable : Fan Speed -> Normal");
+    //Call the Actuator
   }
   else
   {
     Serial.println("Cold : Fan Speed -> OFF");
+    //Call the Actuator
   }
 
   //Decision Humidity
   if (value_humidity < 80)
   {
     Serial.println("Comfortable : AC Temperature -> 27");
+    //Call the Actuator
   }
   else
   {
     Serial.println("Too Humid : AC Temperature -> 25");
+    //Call the Actuator
   }
   Serial.println();
   delay(1000);
@@ -319,10 +351,42 @@ void Loop_TakeDecision_UltraSonic()
   if (value_distanceCM <= Full_Tank)
   {
     Serial.println("Tank is Full turning off switch");
+    //Call the Actuator
   }
   else
   {
     Serial.println("Tank is NOT Full Yet");
+  }
+  Serial.println();
+  delay(1000);
+}
+
+
+/**
+   Read values from Gas Sensor
+*/
+void Loop_GatherData_Gas()
+{
+  LOG(__func__)
+  Serial.println("Read From GAS Sensor");
+  float gas_analog_value = analogRead(PIN_GAS);
+  value_gas = ((gas_analog_value / 1023) * 100);
+  Serial.println(value_gas);
+  Serial.println();
+  delay(500);
+}
+
+/**
+   Take Decision bases on Gas Sensor
+*/
+void Loop_TakeDecision_Gas()
+{
+  LOG(__func__)
+  if (value_gas > 40.0)
+  {
+    Serial.print("Alert!! Gas LEVEL is HIGH: "); //Gas Detected
+    Serial.println(value_gas);
+    //Call the Actuator if needed
   }
   Serial.println();
   delay(1000);
@@ -336,6 +400,7 @@ void Loop_GatherData_PIR()
   LOG(__func__)
   Serial.println("Read From PIR");
   value_pir = digitalRead(PIN_PIR);
+  Serial.println(value_pir);
   Serial.println();
   delay(500);
 }
@@ -350,17 +415,22 @@ void Loop_TakeDecision_PIR()
   {
     Serial.print("PIR Sensor is high: "); //Motion Detected
     Serial.println(value_pir);
+    //Call the Actuator if needed
   }
   else if (value_pir == LOW)
   {
     Serial.print("PIR Sensor is  low: ");//No Motion Detected
     Serial.println(value_pir);
+    //Call the Actuator if needed
   }
   Serial.println();
   delay(1000);
 }
 
-
+/**
+   Sets all fields to the thingspeak instance and uploads them all at once
+   This Function should be called only when data has been collected from all the sensors
+*/
 void Loop_UploadAllData()
 {
   LOG(__func__)
@@ -370,7 +440,14 @@ void Loop_UploadAllData()
   ThingSpeak.setField(4, value_distanceCM); // room temperature
   ThingSpeak.setField(5, 0); //Gas Sensor value
   ThingSpeak.setField(6, value_pir); //Motion sensor value
-  ThingSpeak.writeFields(thingspeak_ChannelID, thingspeak_WriteAPIKey);
+  if (ThingSpeak.writeFields(thingspeak_ChannelID, thingspeak_WriteAPIKey) == 200)
+  {
+    Serial.println("All Data fields Successfully uploaded!");
+  }
+  else
+  {
+    Serial.println("Data Uploading Failed");
+  }
   Serial.println();
 }
 
@@ -405,8 +482,11 @@ void loop() {
   Loop_GatherData_LDR();
   Loop_TakeDecision_LIGHTING(value_LDR, value_pir);
 
+  Loop_GatherData_Gas();
+  Loop_TakeDecision_Gas();
+
   Loop_UploadAllData();
-  Serial.println("======= cycle complete =======\n");
+  Serial.println("======= Cycle Complete =======\n");
   delay(10000);//10 seconds
 
 }
