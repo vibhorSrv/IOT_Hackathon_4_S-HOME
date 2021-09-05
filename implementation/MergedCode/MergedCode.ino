@@ -1,6 +1,7 @@
 /* Essentials */
 #include<DHT.h>
 #include<WiFi.h>
+#include<ThingSpeak.h>
 #define SERIAL_BAUD_RATE 115200
 #define DEBUG 1
 #define LOG(msg) { if(DEBUG) Serial.println(String("**")+msg);}
@@ -11,6 +12,9 @@ WiFiClient client;
 const char *WiFi_SSID = "NETGEAR33";
 const char *WiFi_Password = "sweetelephant067";
 
+/* ThingSpeak Properties */
+unsigned long thingspeak_ChannelID = 1497698;
+const char * thingspeak_WriteAPIKey = "4MGWZM2JL5YNKEFY";
 /******************************************************************/
 
 /* Sensors */
@@ -55,6 +59,7 @@ int value_pir = LOW;
 void Init_SerialMonitor();
 void ConnectToWiFi();
 void Loop_UploadAllData();
+void ThingSpeakBegin();
 
 void Init_PinModesAndSensors();
 
@@ -107,6 +112,11 @@ void ConnectToWiFi()
   Serial.print("Gateway: ");
   Serial.println(WiFi.gatewayIP());
   Serial.println();
+}
+
+void ThingSpeakBegin()
+{
+  ThingSpeak.begin(client);
 }
 /**
    Initializes pin modes and sensors
@@ -300,7 +310,13 @@ void Loop_TakeDecision_PIR()
 void Loop_UploadAllData()
 {
   LOG(__func__)
-  //TODO implement
+  ThingSpeak.setField(1, value_LDR);
+  ThingSpeak.setField(2, value_temperature);
+  ThingSpeak.setField(3, value_humidity);
+  ThingSpeak.setField(4, value_distanceCM);
+  ThingSpeak.setField(5, 0);
+  ThingSpeak.setField(6, value_pir);
+  ThingSpeak.writeFields(thingspeak_ChannelID, thingspeak_WriteAPIKey);
   Serial.println();
 }
 
@@ -309,6 +325,7 @@ void Loop_UploadAllData()
 void setup() {
   Init_SerialMonitor();
   ConnectToWiFi();
+  ThingSpeakBegin();
   Init_PinModesAndSensors();
 
 }
@@ -331,5 +348,6 @@ void loop() {
 
   Loop_UploadAllData();
   Serial.println("======= cycle complete =======\n");
+  delay(10000);//10 seconds
 
 }
