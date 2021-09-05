@@ -1,8 +1,15 @@
 /* Essentials */
 #include<DHT.h>
+#include<WiFi.h>
 #define SERIAL_BAUD_RATE 115200
 #define DEBUG 1
 #define LOG(msg) { if(DEBUG) Serial.println(String("**")+msg);}
+
+/* WIFI Properties */
+
+WiFiClient client;
+const char *WiFi_SSID = "NETGEAR33";
+const char *WiFi_Password = "sweetelephant067";
 
 /******************************************************************/
 
@@ -34,7 +41,7 @@ float value_temperature = 0.0f;
 
 int Full_Tank = 10; //setting full tank level distance 10cm
 long T;
-float distanceCM;
+float value_distanceCM;
 
 int value_pir = LOW;
 
@@ -46,6 +53,7 @@ int value_pir = LOW;
    Function prototypes
 */
 void Init_SerialMonitor();
+void ConnectToWiFi();
 void Loop_UploadAllData();
 
 void Init_PinModesAndSensors();
@@ -76,6 +84,30 @@ void Init_SerialMonitor()
   LOG(__func__)
 }
 
+/**
+   Connects the ESP32 to the WiFi
+*/
+void ConnectToWiFi()
+{
+  LOG(__func__);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WiFi_SSID, WiFi_Password);
+  Serial.print("Connecting to ");
+  Serial.println(WiFi_SSID);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print('.');
+    delay(500);
+  }
+  Serial.println("WiFi Connected!!");
+  Serial.print("My IP address is: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("Netmask: ");
+  Serial.println(WiFi.subnetMask());
+  Serial.print("Gateway: ");
+  Serial.println(WiFi.gatewayIP());
+  Serial.println();
+}
 /**
    Initializes pin modes and sensors
 */
@@ -206,10 +238,10 @@ void Loop_Ultra_Sonic_Distance()
   delayMicroseconds(10);
   digitalWrite(PIN_ULTRASONIC_TRIG, LOW);
   T = pulseIn(PIN_ULTRASONIC_ECHO, HIGH);
-  distanceCM = T * 0.034;
-  distanceCM = distanceCM / 2;
+  value_distanceCM = T * 0.034;
+  value_distanceCM = value_distanceCM / 2;
   Serial.print("Distance in CM : ");
-  Serial.println(distanceCM);
+  Serial.println(value_distanceCM);
   Serial.println();
   delay(500);
 }
@@ -220,7 +252,7 @@ void Loop_Ultra_Sonic_Distance()
 void Loop_TakeDecision_UltraSonic()
 {
   LOG(__func__)
-  if (distanceCM <= Full_Tank)
+  if (value_distanceCM <= Full_Tank)
   {
     Serial.println("Tank is Full turning off switch");
   }
@@ -276,6 +308,7 @@ void Loop_UploadAllData()
 
 void setup() {
   Init_SerialMonitor();
+  ConnectToWiFi();
   Init_PinModesAndSensors();
 
 }
@@ -298,5 +331,5 @@ void loop() {
 
   Loop_UploadAllData();
   Serial.println("======= cycle complete =======\n");
-  
+
 }
