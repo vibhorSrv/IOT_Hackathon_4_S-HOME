@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+	  <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      
+	  <meta http-equiv="Access-Control-Allow-Origin" content="*">
+
+     
+       <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+
+      <title>IOT Hackathon Smart Home Automation</title></head>
+	
+<body bgcolor="white">
+	
+   <center>
+		<h1 style="font-family: Helvetica;color: black;">IOT Hackathon Smart Home Automation</h1>
+	</center>                  
+   
+   <div class="center">
+	<div align="center" class="form">
+       <form action="" method="get">
+			  <input type="text" style="background-color:skyblue; height:30px; width:170px" id="ip" class="ip" placeholder="Thingspeak Write API Key"></input><br><br>
+              <button type="button" style="background-color:lightgreen; height:60px; width:160px" id="D1-on" class="button button1" >D1 ON</button>
+			  <button type="button" style="background-color:lightgreen;height:60px; width: 160px" id="D1-off" class="button button3" >D1 OFF</button>
+			  <br>
+			  <br>
+			<button type="button" style="background-color:lightgreen; height: 60px; width: 160px"id="D2-on" class="button button1" >D2 ON</button>
+			  <button type="button" style="background-color:lightgreen; height: 60px; width: 160px"id="D2-off" class="button button3" >D2 OFF</button>
+			  <br>
+                          <br>
+			<button type="button" style="background-color:lightgreen; height: 60px; width: 160px"id="D3-on" class="button button1" >D3 ON</button>
+			 <button type="button" style="background-color:lightgreen; height: 60px; width: 160px"id="D3-off" class="button button3" >D3 OFF</button>
+			  <br>
+                          <br>
+			
+        </form>
+		<br><br>
+	 </div>
+	</div>
+	
+	
+
+    </body>
+    <script>
+		document.getElementById('D1-on').addEventListener('click', function() {
+				var ip = document.getElementById('ip').value;
+				var url = "http://api.thingspeak.com/update?api_key="+ ip + "&field1=1"
+				$.getJSON(url, function(data) {
+					console.log(data);
+				});
+		});
+		
+		document.getElementById('D1-off').addEventListener('click', function() {
+				var ip = document.getElementById('ip').value;
+				var url = "http://api.thingspeak.com/update?api_key="+ ip + "&field1=0"
+				$.getJSON(url, function(data) {
+					console.log(data);
+				});
+		});
+		
+		
+		document.getElementById('D2-on').addEventListener('click', function() {
+				var ip = document.getElementById('ip').value;
+				var url = "http://api.thingspeak.com/update?api_key="+ ip + "&field2=1"
+				$.getJSON(url, function(data) {
+					console.log(data);
+				});
+		});
+		
+		document.getElementById('D2-off').addEventListener('click', function() {
+				var ip = document.getElementById('ip').value;
+				var url = "http://api.thingspeak.com/update?api_key="+ ip + "&field2=0"
+				$.getJSON(url, function(data) {
+					console.log(data);
+				});
+		});
+		
+		
+		document.getElementById('D3-on').addEventListener('click', function() {
+				var ip = document.getElementById('ip').value;
+				var url = "http://api.thingspeak.com/update?api_key="+ ip + "&field3=1"
+				$.getJSON(url, function(data) {
+					console.log(data);
+				});
+		});
+		
+		document.getElementById('D3-off').addEventListener('click', function() {
+				var ip = document.getElementById('ip').value;
+				var url = "http://api.thingspeak.com/update?api_key="+ ip + "&field3=0"
+				$.getJSON(url, function(data) {
+					console.log(data);
+				});
+		});
+
+		
+	</script>
+</html>
