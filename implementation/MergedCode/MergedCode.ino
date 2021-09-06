@@ -44,7 +44,8 @@ const char * thingspeak_ReadAPIKey = "keykeykey";
 
 /* Actuators */
 
-#define PIN_LED_LDR 5
+#define PIN_LED_LDR 5         //LED controlled by LDR input value
+#define PIN_LED 19            //LED/Buzzer to notify water tank level
 
 /******************************************************************/
 /** Values Downloaded from cloud */
@@ -65,8 +66,12 @@ float value_temperature = 0;  //temperature value measured by DHT11
 float value_gas;              //gas value measured by gas sensor
 
 int Full_Tank = 10;           //setting full tank level distance 10cm
+int Mid_Tank = 100;           // tank filed at middle level
+int Empty_Tank = 200;
 long T;
 float value_distanceCM;       //distance measured by ultrasonic sensor
+
+
 
 int value_pirMotionStatePrevious = LOW; // previous  state of motion sensor's pin
 int value_pirMotionStateCurrent = LOW; // current  state of motion sensor's pin
@@ -166,6 +171,7 @@ void Init_PinModesAndSensors()
   pinMode(PIN_PIR, INPUT);
   //GAS
   pinMode(PIN_GAS, INPUT);
+  Serial.println();
 
 }
 
@@ -188,9 +194,13 @@ bool Loop_ThingSpeakReadAllFields()
     status_light2 = ThingSpeak.getFieldAsInt(2);
     status_fan1 = ThingSpeak.getFieldAsInt(3);
     status_fan2 = ThingSpeak.getFieldAsInt(4);
+    Serial.println("Reading Data Successful from cloud!\n");
     return true;
+  } else
+  {
+    Serial.println("Reading Data Failed from cloud!\n");
+    return false;
   }
-  return false;
 
 }
 
@@ -354,11 +364,20 @@ void Loop_TakeDecision_UltraSonic()
   if (value_distanceCM <= Full_Tank)
   {
     Serial.println("Tank is Full turning off switch");
-    //Call the Actuator
+    digitalWrite(PIN_LED, HIGH); // turn off switch
+    //thingspeak
   }
-  else
+  else if (value_distanceCM <= Mid_Tank)
   {
-    Serial.println("Tank is NOT Full Yet");
+    Serial.println("Tank is Mid Level turning ON switch");
+    digitalWrite(PIN_LED, HIGH); // turn off switch
+    //thingspeak
+  }
+  else if (value_distanceCM <= Empty_Tank)
+  {
+    Serial.println("Tank is Empty turning ON switch");
+    digitalWrite(PIN_LED, HIGH); // turn off switch
+    //thingspeak
   }
   Serial.println();
   delay(1000);
