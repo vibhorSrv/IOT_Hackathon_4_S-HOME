@@ -19,17 +19,17 @@ const char *WiFi_SSID = "NETGEAR33";
 const char *WiFi_Password = "sweetelephant067";
 
 /* ThingSpeak Properties */
-unsigned long thingspeak_ChannelID = 000000;
-const char * thingspeak_WriteAPIKey = "keykeykey";
+unsigned long thingspeak_ChannelID = 1497698;
+const char * thingspeak_WriteAPIKey = "4MGWZM2JL5YNKEFY";
 
-unsigned long thingspeak_ReadChannelID = 000000;
-const char * thingspeak_ReadAPIKey = "keykeykey";
+unsigned long thingspeak_ReadChannelID = 1497857;
+const char * thingspeak_ReadAPIKey = "OHBL04EQUGVURB54";
 
 /******************************************************************/
 
 /* Sensors Pins */
 
-#define PIN_LDR 17
+#define PIN_LDR 36
 
 #define PIN_DHT 15
 
@@ -46,6 +46,8 @@ const char * thingspeak_ReadAPIKey = "keykeykey";
 
 #define PIN_LED_LDR 5         //LED controlled by LDR input value
 #define PIN_LED 19            //LED/Buzzer to notify water tank level
+#define PIN_LIGHT1 16
+#define PIN_LIGHT2 21
 
 /******************************************************************/
 /** Values Downloaded from cloud */
@@ -171,6 +173,9 @@ void Init_PinModesAndSensors()
   pinMode(PIN_PIR, INPUT);
   //GAS
   pinMode(PIN_GAS, INPUT);
+  //Lights
+  pinMode(PIN_LIGHT1, OUTPUT);
+  pinMode(PIN_LIGHT2, OUTPUT);
   Serial.println();
 
 }
@@ -211,10 +216,10 @@ void Loop_UpdateApplianceStates()
 {
   LOG(__func__)
 
-  //digitalWrite(PIN_LIGHT1, (uint8_t)status_light1); //This will be a relay connected to Appliance's switch
+  digitalWrite(PIN_LIGHT1, (uint8_t)status_light1); //This will be a relay connected to Appliance's switch
   Serial.println("Setting LIGHT 1 :->" + booleanToString(status_light1));
 
-  //digitalWrite(PIN_LIGHT2, (uint8_t)status_light2);
+  digitalWrite(PIN_LIGHT2, (uint8_t)status_light2);
   Serial.println("Setting LIGHT 1 :->" + booleanToString(status_light2));
 
   //digitalWrite(PIN_FAN1, (uint8_t)status_fan1);
@@ -342,13 +347,13 @@ void Loop_Ultra_Sonic_Distance()
 {
   LOG(__func__)
   digitalWrite(PIN_ULTRASONIC_TRIG, LOW);
-  delay(1);
+  delayMicroseconds(2);
   digitalWrite(PIN_ULTRASONIC_TRIG, HIGH);
   delayMicroseconds(10);
   digitalWrite(PIN_ULTRASONIC_TRIG, LOW);
   T = pulseIn(PIN_ULTRASONIC_ECHO, HIGH);
-  value_distanceCM = T * 0.034;
-  value_distanceCM = value_distanceCM / 2;
+  value_distanceCM = T * 0.034 / 2;
+  //  value_distanceCM = value_distanceCM / 2;/
   Serial.print("Distance in CM : ");
   Serial.println(value_distanceCM);
   Serial.println();
@@ -373,7 +378,7 @@ void Loop_TakeDecision_UltraSonic()
     digitalWrite(PIN_LED, HIGH); // turn off switch
     //thingspeak
   }
-  else if (value_distanceCM <= Empty_Tank)
+  else if (value_distanceCM >= Empty_Tank)
   {
     Serial.println("Tank is Empty turning ON switch");
     digitalWrite(PIN_LED, HIGH); // turn off switch
@@ -410,6 +415,10 @@ void Loop_TakeDecision_Gas()
     Serial.println(value_gas);
     //Call the Actuator if needed
   }
+  else
+  {
+    Serial.print("Gas LEVEL is Normal");
+  }
   Serial.println();
   delay(1000);
 }
@@ -445,6 +454,10 @@ void Loop_TakeDecision_PIR()
     Serial.print("Motion stopped!");//No Motion Detected
     Serial.println(value_pirMotionStateCurrent);
     //Call the Actuator if needed
+  }
+  else {
+    Serial.print("No Motion detected!");//No Motion Detected
+    Serial.println(value_pirMotionStateCurrent);
   }
   Serial.println();
   delay(1000);
@@ -485,12 +498,13 @@ void setup() {
 }
 
 void loop() {
+  //Control
   if (Loop_ThingSpeakReadAllFields())
   {
     Loop_UpdateApplianceStates();
     delay(5000);
   }
-
+  //Monitoring
   if (Loop_GatherData_DHT11())
   {
     Loop_TakeDecision_DHT11();

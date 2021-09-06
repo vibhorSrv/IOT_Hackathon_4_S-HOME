@@ -19,17 +19,20 @@
 
     - Environmental Conditions (Parameters)
       1. **Sunlight availability/Light intensity**
+         
          - Can be used to -
            - turn on/off outdoor lights at sunset/sunrise (to save power/automation)
            - turn OFF indoor lights (if they are ON) and noone is present in room (to save power)
          
       2. **Room Temperature & Humidity**
+         
          - Can be used to -
            - regulate fan speed (user comfort)
            - regulate Air Conditioning/Room Cooler speed (user comfort/power saving)
            - *also be used to detect fire in extreme cases* (user safety)
          
       3. **Motion**
+         
          - Can be used to -
            - detect Human presence (intruder alert/user safety)
            - presence of human in a room (switch off appliances automatically)
@@ -42,11 +45,11 @@
            - car parking
          
       5. **Gas**
-
+      
          - Can be used to - 
-
+      
            - Detect any gas leakage happeing in the house and alert the user
-
+      
            
 
   - #### Basic Flow Chart
@@ -84,11 +87,28 @@
 - ## Step 3: Cloud
 
   - #### Thingspeak Cloud
-    
+
     - Single channel, Multiple fields 
+
+  - #### Cloud Alternatives - 
+
+    - Arduino Cloud
+
+    - Blynk Cloud
+
+    - Adafruit IO
+
+    - AWS IoT (Amazon Web Services)
+
+    - Firebase
+
+      
+
   - #### Localhost Web Server
     
     - in case when there is no internet
+    
+    - Bluetooth connectivity
     
       
 
