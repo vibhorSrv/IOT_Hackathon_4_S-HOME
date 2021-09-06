@@ -49,26 +49,27 @@ const char * thingspeak_ReadAPIKey = "keykeykey";
 /******************************************************************/
 /** Values Downloaded from cloud */
 
-int status_light1;
-int status_light2;
-int status_fan1;
-int status_fan2;
+int status_light1;            //Current state of light1 switch as received from cloud
+int status_light2;            //Current state of light2 switch as received from cloud
+int status_fan1;              //Current state of fan1 switch as received from cloud
+int status_fan2;              //Current state of fan2 switch as received from cloud
 
 
 /* Values to be Uploaded */
 
-int value_LDR = 0;
+int value_LDR = 0;            //Light intensity measured by LDR
 
-float value_humidity = 0;
-float value_temperature = 0;
+float value_humidity = 0;     //humidity value measured by DHT11
+float value_temperature = 0;  //temperature value measured by DHT11
 
-float value_gas;
+float value_gas;              //gas value measured by gas sensor
 
-int Full_Tank = 10; //setting full tank level distance 10cm
+int Full_Tank = 10;           //setting full tank level distance 10cm
 long T;
-float value_distanceCM;
+float value_distanceCM;       //distance measured by ultrasonic sensor
 
-int value_pir = LOW;
+int value_pirMotionStatePrevious = LOW; // previous  state of motion sensor's pin
+int value_pirMotionStateCurrent = LOW; // current  state of motion sensor's pin
 
 
 /* Constants */
@@ -163,6 +164,8 @@ void Init_PinModesAndSensors()
   pinMode(PIN_ULTRASONIC_ECHO, INPUT);
   //PIR
   pinMode(PIN_PIR, INPUT);
+  //GAS
+  pinMode(PIN_GAS, INPUT);
 
 }
 
@@ -399,8 +402,9 @@ void Loop_GatherData_PIR()
 {
   LOG(__func__)
   Serial.println("Read From PIR");
-  value_pir = digitalRead(PIN_PIR);
-  Serial.println(value_pir);
+  value_pirMotionStatePrevious = value_pirMotionStateCurrent;// store old state
+  value_pirMotionStateCurrent  = digitalRead(PIN_PIR); // read new state
+  Serial.println(value_pirMotionStateCurrent);
   Serial.println();
   delay(500);
 }
@@ -411,16 +415,16 @@ void Loop_GatherData_PIR()
 void Loop_TakeDecision_PIR()
 {
   LOG(__func__)
-  if (value_pir == HIGH)
+  if (value_pirMotionStatePrevious == LOW && value_pirMotionStateCurrent == HIGH) // pin state change: LOW -> HIGH
   {
-    Serial.print("PIR Sensor is high: "); //Motion Detected
-    Serial.println(value_pir);
+    Serial.print("Motion detected!"); //Motion Detected
+    Serial.println(value_pirMotionStateCurrent);
     //Call the Actuator if needed
   }
-  else if (value_pir == LOW)
+  else if (value_pirMotionStatePrevious == HIGH && value_pirMotionStateCurrent == LOW) // pin state change: HIGH -> LOW
   {
-    Serial.print("PIR Sensor is  low: ");//No Motion Detected
-    Serial.println(value_pir);
+    Serial.print("Motion stopped!");//No Motion Detected
+    Serial.println(value_pirMotionStateCurrent);
     //Call the Actuator if needed
   }
   Serial.println();
@@ -438,8 +442,8 @@ void Loop_UploadAllData()
   ThingSpeak.setField(2, value_temperature); // room temperature
   ThingSpeak.setField(3, value_humidity); // humidity
   ThingSpeak.setField(4, value_distanceCM); // room temperature
-  ThingSpeak.setField(5, 0); //Gas Sensor value
-  ThingSpeak.setField(6, value_pir); //Motion sensor value
+  ThingSpeak.setField(5, value_gas); //Gas Sensor value
+  ThingSpeak.setField(6, value_pirMotionStateCurrent); //Motion sensor value
   if (ThingSpeak.writeFields(thingspeak_ChannelID, thingspeak_WriteAPIKey) == 200)
   {
     Serial.println("All Data fields Successfully uploaded!");
@@ -480,7 +484,7 @@ void loop() {
   Loop_TakeDecision_PIR();
 
   Loop_GatherData_LDR();
-  Loop_TakeDecision_LIGHTING(value_LDR, value_pir);
+  Loop_TakeDecision_LIGHTING(value_LDR, value_pirMotionStateCurrent);
 
   Loop_GatherData_Gas();
   Loop_TakeDecision_Gas();
